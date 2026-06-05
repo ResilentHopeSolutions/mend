@@ -127,7 +127,7 @@
   .rem-card{background:var(--paper); border-radius:22px; padding:30px; box-shadow:var(--shadow); border:1px solid var(--line)}
   .field{margin-bottom:16px}
   .field label{display:block; font-weight:600; font-size:.88rem; margin-bottom:.4rem; color:var(--ever)}
-  .field input[type=email], .field input[type=time], .field select{
+  .field input[type=email], .field input[type=text], .field input[type=time], .field select{
     width:100%; padding:.8rem 1rem; border:1.5px solid var(--line); border-radius:12px; font-family:var(--sans); font-size:.95rem; background:var(--cream); color:var(--ink)}
   .field input:focus, .field select:focus{outline:none; border-color:var(--sage)}
   .toggle-row{display:flex; align-items:center; justify-content:space-between; padding:.7rem 0; border-bottom:1px solid var(--line)}
@@ -365,47 +365,38 @@
     </div>
     <div class="rem-grid">
       <div class="rem-card reveal">
-        <form id="remForm">
+        <h3 style="font-size:1.5rem; color:var(--ever-deep); margin-bottom:.35rem">Join the daily boost</h3>
+        <p style="color:#4a443b; font-size:.95rem; margin-bottom:1.2rem">Pop in your email and we'll meet you exactly where you are — a little encouragement plus your gentle activity reminder, every day. Unsubscribe anytime, no guilt.</p>
+
+        <form id="joinForm" novalidate>
           <div class="field">
-            <label for="remEmail">Where should we send your boost?</label>
-            <input type="email" id="remEmail" placeholder="you@email.com" required />
+            <label for="jName">First name</label>
+            <input type="text" id="jName" name="firstName" placeholder="What should we call you?" autocomplete="given-name" />
           </div>
           <div class="field">
-            <label for="remTime">Best time of day</label>
-            <input type="time" id="remTime" value="08:00" />
+            <label for="jEmail">Email</label>
+            <input type="email" id="jEmail" name="email" placeholder="you@email.com" autocomplete="email" required />
           </div>
-          <div style="margin:1.2rem 0 .4rem">
-            <div class="toggle-row">
-              <div><div class="tl">☀️ Daily motivation</div><div class="ts">One short, real piece of encouragement</div></div>
-              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <div><div class="tl">🦶 Activity reminder</div><div class="ts">Your gentle move/stretch for the day</div></div>
-              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-            </div>
-            <div class="toggle-row">
-              <div><div class="tl">🏅 Weekly milestone check-in</div><div class="ts">Celebrate wins, log pain &amp; swelling trend</div></div>
-              <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-            </div>
-          </div>
-          <div class="field" style="margin-top:1rem">
-            <label for="remPhase">Where are you in recovery?</label>
-            <select id="remPhase">
-              <option>Pre-surgery / just scheduled</option>
-              <option selected>Phase 1 · Protect (Weeks 1–2)</option>
-              <option>Phase 2 · Early Motion (Weeks 3–6)</option>
-              <option>Phase 3 · Loading (Weeks 7–12)</option>
-              <option>Month 3+ · Rebuild</option>
+          <div class="field">
+            <label for="jPhase">Where are you in recovery?</label>
+            <select id="jPhase" name="phase">
+              <option value="Pre-surgery">Pre-surgery / just scheduled</option>
+              <option value="Phase 1 - Protect" selected>Phase 1 · Protect (Weeks 1–2)</option>
+              <option value="Phase 2 - Early Motion">Phase 2 · Early Motion (Weeks 3–6)</option>
+              <option value="Phase 3 - Loading">Phase 3 · Loading (Weeks 7–12)</option>
+              <option value="Month 3+ - Rebuild">Month 3+ · Rebuild</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:.6rem">Send me my daily boost</button>
-          <p class="demo-note">This is a working community prototype. Hook the form up to your email/SMS tool (Mailchimp, ConvertKit, Twilio, etc.) to go live.</p>
+          <p id="joinError" style="display:none; color:var(--terra); font-size:.85rem; margin:.2rem 0 .6rem"></p>
+          <button type="submit" id="joinBtn" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:.4rem">Send me my daily boost</button>
+          <p class="demo-note" style="text-align:left">We'll never share your email, and you can leave anytime. By joining you agree to receive recovery emails from Mend.</p>
         </form>
-        <div class="rem-success" id="remSuccess">
+
+        <div class="rem-success" id="joinSuccess">
           <div style="font-size:2.6rem">🌱</div>
           <div class="big">You're in. Welcome to Mend.</div>
-          <p style="color:#4a443b">Your first boost is on its way to <b id="confEmail"></b> around <b id="confTime"></b>. We'll meet you exactly where you are.</p>
-          <button class="btn btn-ghost" style="margin-top:1rem" onclick="resetRem()">Edit my preferences</button>
+          <p style="color:#4a443b">Your first boost is on its way to <b id="joinConfEmail"></b>. We'll meet you exactly where you are.</p>
+          <button class="btn btn-ghost" style="margin-top:1rem" onclick="resetJoin()">Use a different email</button>
         </div>
       </div>
 
@@ -749,18 +740,45 @@ newBoost();
 const streak=document.getElementById('streak');
 for(let i=1;i<=14;i++){const s=document.createElement('span'); if(i<=9){s.classList.add('done');s.textContent='✓';}else{s.textContent=i;} streak.appendChild(s);}
 
-/* reminder form */
-document.getElementById('remForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  const email=document.getElementById('remEmail').value;
-  let t=document.getElementById('remTime').value;
-  document.getElementById('confEmail').textContent=email;
-  let [h,m]=t.split(':'); h=+h; const ap=h>=12?'PM':'AM'; let h12=h%12||12;
-  document.getElementById('confTime').textContent=`${h12}:${m} ${ap}`;
-  this.style.display='none';
-  document.getElementById('remSuccess').classList.add('show');
-});
-function resetRem(){ document.getElementById('remForm').style.display='block'; document.getElementById('remSuccess').classList.remove('show'); }
+/* join form → Vercel serverless function → Brevo */
+(function(){
+  const form=document.getElementById('joinForm');
+  if(!form) return;
+  const btn=document.getElementById('joinBtn');
+  const err=document.getElementById('joinError');
+  const emailEl=document.getElementById('jEmail');
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    err.style.display='none';
+    const email=emailEl.value.trim();
+    const firstName=document.getElementById('jName').value.trim();
+    const phase=document.getElementById('jPhase').value;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      err.textContent='Please enter a valid email address.'; err.style.display='block'; return;
+    }
+    btn.disabled=true; const label=btn.textContent; btn.textContent='Joining…';
+    try{
+      const res=await fetch('/api/subscribe',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,firstName,phase})
+      });
+      if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error||'Something went wrong.'); }
+      document.getElementById('joinConfEmail').textContent=email;
+      form.style.display='none';
+      document.getElementById('joinSuccess').classList.add('show');
+    }catch(ex){
+      err.textContent=ex.message+' Please try again in a moment.'; err.style.display='block';
+      btn.disabled=false; btn.textContent=label;
+    }
+  });
+})();
+function resetJoin(){
+  const f=document.getElementById('joinForm');
+  f.style.display='block'; f.reset();
+  const b=document.getElementById('joinBtn'); b.disabled=false; b.textContent='Send me my daily boost';
+  document.getElementById('joinSuccess').classList.remove('show');
+}
 
 /* share */
 const shareUrl = location.href;
