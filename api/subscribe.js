@@ -56,11 +56,9 @@ module.exports = async function handler(req, res) {
 
     if (![200, 201, 204].includes(contactRes.status)) {
       const detail = await contactRes.json().catch(() => ({}));
+      // The real Brevo reason is logged for you (Vercel -> Logs), but visitors see a friendly message.
       console.error('Brevo contacts error:', contactRes.status, detail);
-      // Temporary: surface Brevo's real reason so we can diagnose (no secrets are exposed here).
-      const reason = (detail && detail.message) ? detail.message : ('HTTP ' + contactRes.status);
-      const code = (detail && detail.code) ? (' [' + detail.code + ']') : '';
-      return res.status(502).json({ error: 'Brevo said: ' + reason + code });
+      return res.status(502).json({ error: 'We could not save your signup just now.' });
     }
 
     if (process.env.BREVO_SENDER_EMAIL) {
