@@ -57,7 +57,10 @@ module.exports = async function handler(req, res) {
     if (![200, 201, 204].includes(contactRes.status)) {
       const detail = await contactRes.json().catch(() => ({}));
       console.error('Brevo contacts error:', contactRes.status, detail);
-      return res.status(502).json({ error: 'We could not save your signup just now.' });
+      // Temporary: surface Brevo's real reason so we can diagnose (no secrets are exposed here).
+      const reason = (detail && detail.message) ? detail.message : ('HTTP ' + contactRes.status);
+      const code = (detail && detail.code) ? (' [' + detail.code + ']') : '';
+      return res.status(502).json({ error: 'Brevo said: ' + reason + code });
     }
 
     if (process.env.BREVO_SENDER_EMAIL) {
